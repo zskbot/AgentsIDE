@@ -1,4 +1,5 @@
 import Editor from '@monaco-editor/react'
+import './editor.css'
 
 const starterCode = `import { useState } from 'react'
 
@@ -23,23 +24,7 @@ export function CodeEditor({ file }: { file: string }) {
         <span>{file}</span>
         <span className="editor-language">TypeScript React</span>
       </div>
-      <Editor
-        height="calc(100vh - 184px)"
-        defaultLanguage="typescript"
-        defaultValue={starterCode}
-        theme="vs-dark"
-        options={{
-          minimap: { enabled: false },
-          fontSize: 13,
-          lineHeight: 21,
-          padding: { top: 14, bottom: 14 },
-          scrollBeyondLastLine: false,
-          automaticLayout: true,
-          tabSize: 2,
-          wordWrap: 'on',
-          smoothScrolling: true,
-        }}
-      />
+      <Editor height="calc(100vh - 184px)" defaultLanguage="typescript" defaultValue={starterCode} theme="vs-dark" options={{ minimap: { enabled: false }, fontSize: 13, lineHeight: 21, padding: { top: 14, bottom: 14 }, scrollBeyondLastLine: false, automaticLayout: true, tabSize: 2, wordWrap: 'on', smoothScrolling: true }} />
     </div>
   )
 }
