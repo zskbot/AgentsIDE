@@ -1,0 +1,41 @@
+name: AgentsIDE Autoship Deploy
+
+on:
+  workflow_run:
+    workflows: ["AgentsIDE CI"]
+    types: [completed]
+
+jobs:
+  deploy:
+    if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Autoship pipeline
+        env:
+          AUTOSHIP_URL: ${{ secrets.AUTOSHIP_URL }}
+          AUTOSHIP_PROJECT_ID: ${{ secrets.AUTOSHIP_PROJECT_ID }}
+          COMMIT_MESSAGE: ${{ github.event.workflow_run.head_commit.message }}
+          COMMIT_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          set -euo pipefail
+          if [ -z "${AUTOSHIP_URL:-}" ] || [ -z "${AUTOSHIP_PROJECT_ID:-}" ]; then
+            echo "Autoship secrets are not configured; skipping deployment."
+            exit 0
+          fi
+
+          curl --fail-with-body --silent --show-error \
+            -X POST "${AUTOSHIP_URL%/}/api/pipelines/trigger" \
+            -H 'Content-Type: application/json' \
+            --data "$(python - <<'PY'
+          import json, os
+          print(json.dumps({
+            'projectId': os.environ['AUTOSHIP_PROJECT_ID'],
+            'commitMessage': os.environ.get('COMMIT_MESSAGE') or 'deploy: AgentsIDE through Autoship',
+            'branch': 'main',
+            'author': 'github-actions',
+            'triggeredBy': 'github-actions',
+          }))
+          PY
+          )"
+
+          echo "Autoship deployment trigger accepted for ${COMMIT_SHA}."
