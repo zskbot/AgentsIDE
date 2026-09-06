@@ -1,120 +1,32 @@
 import { useState } from 'react'
-import {
-  Bot,
-  ChevronDown,
-  Code2,
-  FileCode2,
-  Folder,
-  GitBranch,
-  GitPullRequest,
-  Play,
-  Plus,
-  Search,
-  Send,
-  Settings2,
-  Sparkles,
-  TerminalSquare,
-  TestTube2,
-  X,
-  Check,
-} from 'lucide-react'
+import { Bot, ChevronDown, Code2, FileCode2, Folder, GitBranch, GitPullRequest, Play, Plus, Search, Send, Settings2, Sparkles, TerminalSquare, TestTube2, Check } from 'lucide-react'
+import { CodeEditor } from './components/CodeEditor'
+import { FileExplorer } from './components/FileExplorer'
 
 type View = 'workspace' | 'code' | 'agent' | 'review' | 'tools'
-
 const files = [
-  { name: 'App.tsx', path: 'src/App.tsx', active: true },
-  { name: 'index.css', path: 'src/index.css' },
-  { name: 'main.tsx', path: 'src/main.tsx' },
-  { name: 'package.json', path: 'package.json' },
+  { name: 'App.tsx', path: 'src/App.tsx' }, { name: 'index.css', path: 'src/index.css' },
+  { name: 'main.tsx', path: 'src/main.tsx' }, { name: 'package.json', path: 'package.json' },
 ]
-
-const code = [
-  'export default function App() {',
-  '  const [view, setView] = useState<View>(\'workspace\')',
-  '',
-  '  return (',
-  '    <main className="app-shell">',
-  '      <WorkspaceHeader />',
-  '      <WorkspaceView />',
-  '    </main>',
-  '  )',
-  '}',
-]
-
 function App() {
-  const [view, setView] = useState<View>('workspace')
-  const [prompt, setPrompt] = useState('')
-
-  return (
-    <div className="app-shell">
-      <header className="topbar">
-        <div className="brand"><span className="brand-mark"><Sparkles size={16} /></span><strong>AgentsIDE</strong></div>
-        <button className="workspace-switch">zskbot / AgentsIDE <ChevronDown size={14} /></button>
-        <div className="top-actions"><span className="status-dot" /><span className="status-text">Ready</span><button className="icon-btn"><Settings2 size={18} /></button></div>
-      </header>
-
-      <main className="main-content">
-        {view === 'workspace' && <Workspace onOpenCode={() => setView('code')} />}
-        {view === 'code' && <Editor />}
-        {view === 'agent' && <Agent prompt={prompt} setPrompt={setPrompt} />}
-        {view === 'review' && <Review />}
-        {view === 'tools' && <Tools />}
-      </main>
-
-      <nav className="bottom-nav">
-        <NavItem icon={<Folder size={19} />} label="Work" active={view === 'workspace'} onClick={() => setView('workspace')} />
-        <NavItem icon={<Code2 size={19} />} label="Code" active={view === 'code'} onClick={() => setView('code')} />
-        <NavItem icon={<Bot size={19} />} label="Agent" active={view === 'agent'} onClick={() => setView('agent')} />
-        <NavItem icon={<GitPullRequest size={19} />} label="Review" active={view === 'review'} onClick={() => setView('review')} />
-        <NavItem icon={<TerminalSquare size={19} />} label="Tools" active={view === 'tools'} onClick={() => setView('tools')} />
-      </nav>
-    </div>
-  )
+  const [view, setView] = useState<View>('workspace'); const [prompt, setPrompt] = useState(''); const [activeFile, setActiveFile] = useState('App.tsx')
+  const openFile = (file: string) => { setActiveFile(file); setView('code') }
+  return <div className="app-shell">
+    <header className="topbar"><div className="brand"><span className="brand-mark"><Sparkles size={16} /></span><strong>AgentsIDE</strong></div><button className="workspace-switch">zskbot / AgentsIDE <ChevronDown size={14} /></button><div className="top-actions"><span className="status-dot" /><span className="status-text">Ready</span><button className="icon-btn"><Settings2 size={18} /></button></div></header>
+    <main className="main-content">
+      {view === 'workspace' && <Workspace onOpenCode={() => openFile(activeFile)} onOpenFile={openFile} />}
+      {view === 'code' && <CodeWorkspace activeFile={activeFile} onSelect={openFile} />}
+      {view === 'agent' && <Agent prompt={prompt} setPrompt={setPrompt} />}{view === 'review' && <Review />}{view === 'tools' && <Tools />}
+    </main>
+    <nav className="bottom-nav"><NavItem icon={<Folder size={19} />} label="Work" active={view === 'workspace'} onClick={() => setView('workspace')} /><NavItem icon={<Code2 size={19} />} label="Code" active={view === 'code'} onClick={() => setView('code')} /><NavItem icon={<Bot size={19} />} label="Agent" active={view === 'agent'} onClick={() => setView('agent')} /><NavItem icon={<GitPullRequest size={19} />} label="Review" active={view === 'review'} onClick={() => setView('review')} /><NavItem icon={<TerminalSquare size={19} />} label="Tools" active={view === 'tools'} onClick={() => setView('tools')} /></nav>
+  </div>
 }
-
-function NavItem({ icon, label, active, onClick }: { icon: React.ReactNode; label: string; active: boolean; onClick: () => void }) {
-  return <button className={`nav-item ${active ? 'active' : ''}`} onClick={onClick}>{icon}<span>{label}</span></button>
-}
-
-function Workspace({ onOpenCode }: { onOpenCode: () => void }) {
-  return <section className="screen workspace-screen">
-    <div className="eyebrow">WORKSPACE</div>
-    <div className="hero-row"><div><h1>Build with agents.</h1><p>Code, review, test and ship from one workspace.</p></div><button className="primary-btn"><Plus size={17} /> New task</button></div>
-    <div className="repo-card">
-      <div className="repo-icon"><Code2 size={21} /></div><div className="repo-copy"><strong>AgentsIDE</strong><span><GitBranch size={13} /> main · clean</span></div><span className="live-pill">LIVE</span>
-    </div>
-    <div className="section-heading"><span>Files</span><button className="ghost-btn" onClick={onOpenCode}>Open editor <Code2 size={15} /></button></div>
-    <div className="file-list">{files.map(file => <button className={`file-row ${file.active ? 'selected' : ''}`} key={file.path} onClick={onOpenCode}><FileCode2 size={17} /><span>{file.name}</span><small>{file.path}</small></button>)}</div>
-    <div className="metrics"><Metric label="Changes" value="0" /><Metric label="Tests" value="Ready" /><Metric label="Agent" value="Idle" /></div>
-  </section>
-}
-
+function NavItem({ icon, label, active, onClick }: { icon: React.ReactNode; label: string; active: boolean; onClick: () => void }) { return <button className={`nav-item ${active ? 'active' : ''}`} onClick={onClick}>{icon}<span>{label}</span></button> }
+function Workspace({ onOpenCode, onOpenFile }: { onOpenCode: () => void; onOpenFile: (file: string) => void }) { return <section className="screen workspace-screen"><div className="eyebrow">WORKSPACE</div><div className="hero-row"><div><h1>Build with agents.</h1><p>Code, review, test and ship from one workspace.</p></div><button className="primary-btn"><Plus size={17} /> New task</button></div><div className="repo-card"><div className="repo-icon"><Code2 size={21} /></div><div className="repo-copy"><strong>AgentsIDE</strong><span><GitBranch size={13} /> main · clean</span></div><span className="live-pill">READY</span></div><div className="section-heading"><span>Files</span><button className="ghost-btn" onClick={onOpenCode}>Open editor <Code2 size={15} /></button></div><div className="file-list">{files.map(file => <button className={`file-row ${file.name === 'App.tsx' ? 'selected' : ''}`} key={file.path} onClick={() => onOpenFile(file.name)}><FileCode2 size={17} /><span>{file.name}</span><small>{file.path}</small></button>)}</div><div className="metrics"><Metric label="Changes" value="0" /><Metric label="Tests" value="Ready" /><Metric label="Agent" value="Idle" /></div></section> }
 function Metric({ label, value }: { label: string; value: string }) { return <div className="metric"><span>{label}</span><strong>{value}</strong></div> }
-
-function Editor() {
-  return <section className="screen editor-screen">
-    <div className="editor-toolbar"><button className="ghost-btn"><Search size={16} /> Search</button><span className="editor-file">App.tsx</span><button className="icon-btn"><Play size={17} /></button></div>
-    <div className="code-panel"><div className="code-meta"><span>src / App.tsx</span><span>TypeScript React</span></div><pre>{code.map((line, i) => <div className="code-line" key={i}><span className="line-no">{String(i + 1).padStart(2, '0')}</span><code>{line || ' '}</code></div>)}</pre></div>
-    <div className="editor-footer"><span><GitBranch size={14} /> main</span><span>Ln 2, Col 28</span></div>
-  </section>
-}
-
-function Agent({ prompt, setPrompt }: { prompt: string; setPrompt: (v: string) => void }) {
-  return <section className="screen agent-screen">
-    <div className="eyebrow">AGENT</div><h1>What should I build?</h1><p className="muted">Describe a coding task. AgentsIDE will plan the change, edit files and prepare a review.</p>
-    <div className="agent-card"><div className="agent-head"><span className="agent-avatar"><Bot size={18} /></span><div><strong>AgentsIDE Agent</strong><span>Workspace-aware coding agent</span></div></div><textarea value={prompt} onChange={e => setPrompt(e.target.value)} placeholder="e.g. Add authentication to the app..." /><div className="prompt-actions"><div className="chips"><button>Fix bug</button><button>Refactor</button><button>Add feature</button></div><button className="send-btn" disabled={!prompt.trim()}><Send size={17} /></button></div></div>
-    <div className="plan-card"><span className="mini-label">EXECUTION LOOP</span><div className="loop"><span>Plan</span><i>→</i><span>Edit</span><i>→</i><span>Test</span><i>→</i><span>Review</span></div></div>
-  </section>
-}
-
-function Review() {
-  return <section className="screen review-screen"><div className="eyebrow">REVIEW</div><div className="review-title"><div><h1>Ready for review</h1><p className="muted">No uncommitted changes in this workspace.</p></div><span className="clean-badge"><Check size={14} /> Clean</span></div><div className="diff-empty"><GitPullRequest size={30} /><strong>Nothing to review</strong><span>Agent changes will appear here as a file-by-file diff.</span></div><div className="review-actions"><button className="secondary-btn">Request agent task</button><button className="primary-btn">Run checks <TestTube2 size={16} /></button></div></section>
-}
-
-function Tools() {
-  return <section className="screen tools-screen"><div className="eyebrow">TOOLS</div><h1>Developer tools</h1><div className="tool-grid"><Tool icon={<TerminalSquare />} title="Terminal" text="Run commands in the workspace." /><Tool icon={<TestTube2 />} title="Tests" text="Run the project test suite." /><Tool icon={<GitBranch />} title="Git" text="Branches, commits and status." /><Tool icon={<Play />} title="Deploy" text="Ship a verified build." /></div></section>
-}
-
+function CodeWorkspace({ activeFile, onSelect }: { activeFile: string; onSelect: (file: string) => void }) { return <section className="screen editor-screen"><div className="editor-toolbar"><button className="ghost-btn"><Search size={16} /> Search</button><span className="editor-file">{activeFile}</span><button className="icon-btn"><Play size={17} /></button></div><div className="editor-layout"><FileExplorer activeFile={activeFile} onSelect={onSelect} /><CodeEditor file={activeFile} /></div><div className="editor-footer"><span><GitBranch size={14} /> main</span><span>Editor ready</span></div></section> }
+function Agent({ prompt, setPrompt }: { prompt: string; setPrompt: (v: string) => void }) { return <section className="screen agent-screen"><div className="eyebrow">AGENT</div><h1>What should I build?</h1><p className="muted">Describe a coding task. AgentsIDE will plan the change, edit files and prepare a review.</p><div className="agent-card"><div className="agent-head"><span className="agent-avatar"><Bot size={18} /></span><div><strong>AgentsIDE Agent</strong><span>Workspace-aware coding agent</span></div></div><textarea value={prompt} onChange={e => setPrompt(e.target.value)} placeholder="e.g. Add authentication to the app..." /><div className="prompt-actions"><div className="chips"><button onClick={() => setPrompt('Fix the current bug')}>Fix bug</button><button onClick={() => setPrompt('Refactor this module')}>Refactor</button><button onClick={() => setPrompt('Add a new feature')}>Add feature</button></div><button className="send-btn" disabled={!prompt.trim()}><Send size={17} /></button></div></div><div className="plan-card"><span className="mini-label">EXECUTION LOOP</span><div className="loop"><span>Plan</span><i>→</i><span>Edit</span><i>→</i><span>Test</span><i>→</i><span>Review</span></div></div></section> }
+function Review() { return <section className="screen review-screen"><div className="eyebrow">REVIEW</div><div className="review-title"><div><h1>Ready for review</h1><p className="muted">No uncommitted changes in this workspace.</p></div><span className="clean-badge"><Check size={14} /> Clean</span></div><div className="diff-empty"><GitPullRequest size={30} /><strong>Nothing to review</strong><span>Agent changes will appear here as a file-by-file diff.</span></div><div className="review-actions"><button className="secondary-btn">Request agent task</button><button className="primary-btn">Run checks <TestTube2 size={16} /></button></div></section> }
+function Tools() { return <section className="screen tools-screen"><div className="eyebrow">TOOLS</div><h1>Developer tools</h1><div className="tool-grid"><Tool icon={<TerminalSquare />} title="Terminal" text="Run commands in the workspace." /><Tool icon={<TestTube2 />} title="Tests" text="Run the project test suite." /><Tool icon={<GitBranch />} title="Git" text="Branches, commits and status." /><Tool icon={<Play />} title="Deploy" text="Ship a verified build." /></div></section> }
 function Tool({ icon, title, text }: { icon: React.ReactNode; title: string; text: string }) { return <button className="tool-card"><span>{icon}</span><strong>{title}</strong><small>{text}</small></button> }
-
 export default App
