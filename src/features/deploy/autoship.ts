@@ -23,13 +23,34 @@ export type AutoshipRun = {
 const configuredBaseUrl = (import.meta.env.VITE_AUTOSHIP_URL as string | undefined)?.trim()
 export const AUTOSHIP_URL = (configuredBaseUrl || 'https://ais-dev-po4u3k2theglc3tqxoryuu-260459870834.asia-southeast1.run.app').replace(/\/$/, '')
 
+export class AutoshipConnectionError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'AutoshipConnectionError'
+  }
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${AUTOSHIP_URL}${path}`, {
-    ...init,
-    headers: { 'Content-Type': 'application/json', ...(init?.headers || {}) },
-  })
-  if (!response.ok) throw new Error(`Autoship ${response.status}: ${await response.text()}`)
-  return response.json() as Promise<T>
+  try {
+    const response = await fetch(`${AUTOSHIP_URL}${path}`, {
+      ...init,
+      mode: 'cors',
+      credentials: 'omit',
+      headers: { Accept: 'application/json', 'Content-Type': 'application/json', ...(init?.headers || {}) },
+    })
+    const contentType = response.headers.get('content-type') || ''
+    if (!response.ok) {
+      const body = contentType.includes('application/json') ? await response.text() : ''
+      throw new AutoshipConnectionError(`Autoship ${response.status}${body ? `: ${body.slice(0, 180)}` : ''}`)
+    }
+    if (!contentType.includes('application/json')) {
+      throw new AutoshipConnectionError('Autoship returned a non-JSON response (authentication or proxy may be active).')
+    }
+    return response.json() as Promise<T>
+  } catch (error) {
+    if (error instanceof AutoshipConnectionError) throw error
+    throw new AutoshipConnectionError(`Cannot reach Autoship API at ${AUTOSHIP_URL}. Check CORS/network access.`)
+  }
 }
 
 export async function getAutoshipProjects(): Promise<AutoshipProject[]> {
