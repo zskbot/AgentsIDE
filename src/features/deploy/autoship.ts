@@ -18,6 +18,8 @@ export type AutoshipRun = {
   triggeredBy: string
   deployedUrl?: string
   startedAt: string
+  completedAt?: string
+  errorMessage?: string
 }
 
 const configuredBaseUrl = (import.meta.env.VITE_AUTOSHIP_URL as string | undefined)?.trim()
@@ -43,9 +45,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
       const body = contentType.includes('application/json') ? await response.text() : ''
       throw new AutoshipConnectionError(`Autoship ${response.status}${body ? `: ${body.slice(0, 180)}` : ''}`)
     }
-    if (!contentType.includes('application/json')) {
-      throw new AutoshipConnectionError('Autoship returned a non-JSON response (authentication or proxy may be active).')
-    }
+    if (!contentType.includes('application/json')) throw new AutoshipConnectionError('Autoship returned a non-JSON response (authentication or proxy may be active).')
     return response.json() as Promise<T>
   } catch (error) {
     if (error instanceof AutoshipConnectionError) throw error
@@ -58,20 +58,17 @@ export async function getAutoshipProjects(): Promise<AutoshipProject[]> {
   return data.projects
 }
 
+export async function getAutoshipRun(runId: string): Promise<AutoshipRun> {
+  const data = await request<{ run: AutoshipRun }>(`/api/pipelines/${encodeURIComponent(runId)}`)
+  return data.run
+}
+
 export async function ensureAgentsIDEProject(): Promise<AutoshipProject> {
   const repoUrl = 'https://github.com/zskbot/AgentsIDE'
   const projects = await getAutoshipProjects()
   const existing = projects.find(project => project.repoUrl.replace(/\/$/, '') === repoUrl)
-  if (existing) return existing
-  const data = await request<{ project: AutoshipProject }>('/api/projects', {
-    method: 'POST',
-    body: JSON.stringify({
-      name: 'AgentsIDE', repoUrl, branch: 'main', target: 'static-server',
-      framework: 'react-vite', buildCommand: 'npm ci && npm run build',
-      autoDeployOnPush: true, notifyOnSuccess: true, notifyOnFailure: true,
-    }),
-  })
-  return data.project
+  if (!existing) throw new AutoshipConnectionError('AgentsIDE is not registered in Autoship yet. The GitHub deployment workflow will bootstrap it.')
+  return existing
 }
 
 export async function triggerAgentsIDEDeploy(projectId: string, commitMessage = 'deploy: AgentsIDE through Autoship') {
