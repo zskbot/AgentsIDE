@@ -1,31 +1,35 @@
 # Autoship integration
 
-AgentsIDE exposes an Autoship deployment control in Workspace and Tools.
+AgentsIDE exposes Autoship deployment status in Workspace and Tools.
 
 ## Runtime endpoint
 
-The frontend defaults to the existing Autoship Cloud Run endpoint. Override it at build time with:
+The frontend defaults to the existing Autoship Cloud Run endpoint. Override it at build time with `VITE_AUTOSHIP_URL=https://your-autoship-host`.
 
-`VITE_AUTOSHIP_URL=https://your-autoship-host`
+## Production flow
 
-## Interactive flow
+1. `AgentsIDE CI` validates the application.
+2. `.github/workflows/autoship-deploy.yml` runs only after successful `main` CI (or manual dispatch).
+3. The workflow calls `POST /api/projects/upsert`, so no project ID is hard-coded.
+4. The workflow calls `POST /api/pipelines/trigger` with the exact 40-character workflow commit SHA.
+5. Autoship clones that exact revision, installs dependencies, tests, builds, deploys and health-checks it.
+6. AgentsIDE reads `/api/pipelines` and `/api/pipelines/:id` to surface deployment status and deployed URL.
 
-1. AgentsIDE checks `/api/projects` for a project tracking `https://github.com/zskbot/AgentsIDE`.
-2. If missing, it creates the project through `POST /api/projects`.
-3. Deploy triggers `POST /api/pipelines/trigger` for the `main` branch.
-4. The returned pipeline ID is shown in the workspace.
+## Authentication boundary
 
-## Server-side deployment flow
+Browser code never receives `AUTOSHIP_API_TOKEN`. Mutating Autoship API calls are server-side GitHub Actions operations. Read-only status calls can be made by the browser through CORS.
 
-`.github/workflows/autoship-deploy.yml` provides the production-safe path for GitHub Actions. It runs only after `AgentsIDE CI` succeeds on `main`, then calls Autoship server-to-server. This avoids browser CORS and keeps deployment configuration out of the frontend bundle.
+Optional GitHub Actions secrets:
 
-Configure these GitHub Actions repository secrets when the Autoship API is publicly reachable:
+- `AUTOSHIP_URL` — override the default Autoship endpoint.
+- `AUTOSHIP_API_TOKEN` — bearer token for protected mutating API routes.
 
-- `AUTOSHIP_URL` — base URL of the Autoship service.
-- `AUTOSHIP_PROJECT_ID` — the Autoship project ID tracking AgentsIDE.
+The workflow derives the project ID with `projects/upsert`; it does not depend on `AUTOSHIP_PROJECT_ID`.
 
-If either secret is missing, the workflow exits successfully without deploying. This makes the integration safe to merge before the deployment service is exposed.
+## Autoship runner requirements
+
+For private repositories, the isolated runner uses `AUTOSHIP_GITHUB_TOKEN` without embedding the token in the clone URL. Deployment-specific credentials remain runner-side: SSH keys/known-hosts, webhook tokens, registry credentials, and Cloud Run credentials.
 
 ## Security boundary
 
-The integration does not store GitHub tokens, Gemini keys, SSH credentials, or deployment secrets in the AgentsIDE frontend. Browser-side deployment is intended for development; the GitHub Actions path is the preferred production trigger.
+No GitHub token, Gemini key, SSH credential, deployment token, or API secret is bundled into AgentsIDE. Autoship limits command runtime and log output, sanitizes inherited environment variables, redacts configured secret values, cleans temporary workspaces, and verifies GitHub webhook signatures.
