@@ -38,11 +38,11 @@ jobs:
           PROJECT_ID=$(python -c 'import json,sys; print(json.load(sys.stdin)["project"]["id"])' <<<"${PROJECT_JSON}")
           test -n "${PROJECT_ID}"
 
-          curl --fail-with-body --silent --show-error \
+          PROJECT_ID="${PROJECT_ID}" curl --fail-with-body --silent --show-error \
             -X POST "${AUTOSHIP_URL%/}/api/pipelines/trigger" \
             -H 'Content-Type: application/json' \
             "${AUTH_ARGS[@]}" \
-            --data "$(python - <<'PY'
+            --data "$(PROJECT_ID="${PROJECT_ID}" python - <<'PY'
           import json, os
           print(json.dumps({
             'projectId': os.environ['PROJECT_ID'],
