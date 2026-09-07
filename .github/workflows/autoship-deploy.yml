@@ -13,18 +13,17 @@ jobs:
     steps:
       - name: Bootstrap Autoship project and trigger deployment
         env:
-          AUTOSHIP_URL: ${{ secrets.AUTOSHIP_URL }}
+          AUTOSHIP_URL: https://autoship.velclaw.cfd
           AUTOSHIP_API_TOKEN: ${{ secrets.AUTOSHIP_API_TOKEN }}
           COMMIT_MESSAGE: ${{ github.event.workflow_run.head_commit.message || github.event.head_commit.message }}
           COMMIT_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
         run: |
           set -euo pipefail
-          test -n "${AUTOSHIP_URL:-}" || { echo "AUTOSHIP_URL secret is required; AI Studio fallback has been removed."; exit 1; }
           test -n "${AUTOSHIP_API_TOKEN:-}" || { echo "AUTOSHIP_API_TOKEN secret is required."; exit 1; }
           AUTH_ARGS=(-H "Authorization: Bearer ${AUTOSHIP_API_TOKEN}")
 
           PROJECT_JSON=$(curl --fail-with-body --silent --show-error \
-            -X POST "${AUTOSHIP_URL%/}/api/projects/upsert" \
+            -X POST "${AUTOSHIP_URL}/api/projects/upsert" \
             -H 'Content-Type: application/json' \
             "${AUTH_ARGS[@]}" \
             --data '{"name":"AgentsIDE","repoUrl":"https://github.com/zskbot/AgentsIDE","branch":"main","target":"static-server","framework":"react-vite","buildCommand":"npm ci && npm run build","autoDeployOnPush":true,"notifyOnSuccess":true,"notifyOnFailure":true}')
@@ -33,7 +32,7 @@ jobs:
           test -n "${PROJECT_ID}"
 
           PROJECT_ID="${PROJECT_ID}" curl --fail-with-body --silent --show-error \
-            -X POST "${AUTOSHIP_URL%/}/api/pipelines/trigger" \
+            -X POST "${AUTOSHIP_URL}/api/pipelines/trigger" \
             -H 'Content-Type: application/json' \
             "${AUTH_ARGS[@]}" \
             --data "$(PROJECT_ID="${PROJECT_ID}" COMMIT_SHA="${COMMIT_SHA}" python - <<'PY'
