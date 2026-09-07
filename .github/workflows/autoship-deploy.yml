@@ -13,8 +13,8 @@ jobs:
     steps:
       - name: Bootstrap Autoship project and trigger deployment
         env:
-          # Temporary endpoint while autoship.velclaw.cfd is unavailable.
-          AUTOSHIP_URL: https://autoship-control-plane.nvht25052002.workers.dev
+          # Temporary endpoint through the Autoship service-binding gateway while the custom domain is unavailable.
+          AUTOSHIP_URL: https://autoship-control-plane-gateway.nvht25052002.workers.dev
           AUTOSHIP_API_TOKEN: ${{ secrets.AUTOSHIP_API_TOKEN }}
           COMMIT_MESSAGE: ${{ github.event.workflow_run.head_commit.message || github.event.head_commit.message }}
           COMMIT_SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
