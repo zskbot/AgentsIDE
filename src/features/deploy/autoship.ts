@@ -23,7 +23,7 @@ export type AutoshipRun = {
 }
 
 const configuredBaseUrl = (import.meta.env.VITE_AUTOSHIP_URL as string | undefined)?.trim()
-export const AUTOSHIP_URL = (configuredBaseUrl || 'https://autoship-control-plane.nvht25052002.workers.dev').replace(/\/$/, '')
+export const AUTOSHIP_URL = (configuredBaseUrl || 'https://autoship-control-plane-gateway.nvht25052002.workers.dev').replace(/\/$/, '')
 
 export class AutoshipConnectionError extends Error {
   constructor(message: string) {
