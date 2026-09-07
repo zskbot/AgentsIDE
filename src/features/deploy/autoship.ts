@@ -23,7 +23,7 @@ export type AutoshipRun = {
 }
 
 const configuredBaseUrl = (import.meta.env.VITE_AUTOSHIP_URL as string | undefined)?.trim()
-export const AUTOSHIP_URL = (configuredBaseUrl || 'https://ais-dev-po4u3k2theglc3tqxoryuu-260459870834.asia-southeast1.run.app').replace(/\/$/, '')
+export const AUTOSHIP_URL = (configuredBaseUrl || 'https://autoship.velclaw.cfd').replace(/\/$/, '')
 
 export class AutoshipConnectionError extends Error {
   constructor(message: string) {
